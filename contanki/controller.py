@@ -108,8 +108,7 @@ class Controller:
                 buttons.append(i + 100)
         return buttons
 
-    # FIXME: Needs to handle axis dpads
-    def get_dpad_buttons(self) -> tuple[int, int, int, int] | None:
+    def get_dpad_buttons(self) -> tuple[int, int, int, int] | tuple[int, int] | None:
         """Get the indicies of the D-pad buttons."""
         if not self.has_dpad:
             return None
@@ -127,6 +126,15 @@ class Controller:
                 indicies[buttons.index("D-Pad Right")],
             )
         else:
+            indicies, axes = zip(*self.axes.items())
+            if (
+                "D-Pad Horizontal" in axes
+                and "D-Pad Vertical" in axes
+            ):
+                return (
+                    indicies[axes.index("D-Pad Horizontal")],
+                    indicies[axes.index("D-Pad Vertical")]
+                )
             return None
 
     def get_stick_button(self) -> int | None:

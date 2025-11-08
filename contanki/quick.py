@@ -216,9 +216,11 @@ class QuickSelectMenu:
             index = -1
         self._select(state, index)
 
-    def stick_select(self, state: State, x: float, y: float) -> None:
+    def stick_select(self, state: State, x: float, y: float, is_dpad: bool) -> None:
         """Select an action based on stick input."""
-        if not self.settings["Select with Stick"]:
+        if is_dpad and not self.settings["Select with D-Pad"]:
+            return
+        elif not is_dpad and not self.settings["Select with Stick"]:
             return
         if state in ("question", "answer"):
             state = "review"
@@ -238,7 +240,7 @@ class QuickSelectMenu:
                 index = -1
         else:
             if (
-                self.settings["Do Action on Stick Flick"]
+                (is_dpad or self.settings["Do Action on Stick Flick"])
                 and not self.dpad_pressed
                 and self.current_action
                 and x**2 + y**2 < 0.1

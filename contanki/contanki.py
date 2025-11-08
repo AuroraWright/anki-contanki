@@ -202,6 +202,14 @@ class Contanki(AnkiWebView):
             axes[0] = axes[0] or axes[2]
             axes[1] = axes[1] or axes[5]
 
+        if (
+            self.profile.controller.parent == "8BitDo Micro"
+            and any(axes)
+            and len(axes) > 5
+        ):
+            axes[0] = axes[0] or axes[2]
+            axes[1] = axes[1] or axes[5]
+
         self.update_quick_select(state, buttons, axes)
         
         changed = [(i, v) for i, v in enumerate(buttons) if v != self.buttons[i]]
@@ -248,18 +256,36 @@ class Contanki(AnkiWebView):
         if not self.quick_select.is_shown:
             return
 
+        done_dpad = False
+
         if (
             self.quick_select.settings["Select with D-Pad"]
             and self.profile.controller.dpad_buttons is not None
-            and any(buttons[index] for index in self.profile.controller.dpad_buttons)
         ):
-            up, down, left, right = self.profile.controller.dpad_buttons
-            dpad_status = buttons[up], buttons[down], buttons[left], buttons[right]
-            self.quick_select.dpad_select(state, dpad_status)
-            for index in self.profile.controller.dpad_buttons:
-                self.buttons[index] = buttons[index]
-        elif self.profile.controller.has_stick:
-            self.quick_select.stick_select(state, axes[0], axes[1])
+            if (
+                len(self.profile.controller.dpad_buttons) == 4
+                and any(buttons[index] for index in self.profile.controller.dpad_buttons)
+            ):
+                up, down, left, right = self.profile.controller.dpad_buttons
+                dpad_status = buttons[up], buttons[down], buttons[left], buttons[right]
+                self.quick_select.dpad_select(state, dpad_status)
+                for index in self.profile.controller.dpad_buttons:
+                    self.buttons[index] = buttons[index]
+                done_dpad = True
+            elif (
+                len(self.profile.controller.dpad_buttons) == 2
+                and any(axes[index] for index in self.profile.controller.dpad_buttons)
+            ):
+                horizontal, vertical = self.profile.controller.dpad_buttons
+                x = -axes[horizontal] if self.profile.invert_axis[horizontal] else axes[horizontal]
+                y = -axes[vertical] if self.profile.invert_axis[vertical] else axes[vertical]
+                self.quick_select.stick_select(state, x, y, True)
+                done_dpad = True
+
+        if self.profile.controller.has_stick and not done_dpad:
+            x = -axes[0] if self.profile.invert_axis[0] else axes[0]
+            y = -axes[1] if self.profile.invert_axis[1] else axes[1]
+            self.quick_select.stick_select(state, x, y, False)
 
         if (
             (stick_button := self.profile.controller.stick_button) is not None
